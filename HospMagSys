@@ -1,0 +1,839 @@
+import java.awt.Color;
+import java.awt.Font;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+
+// ---------------- DATABASE CONNECTION ----------------
+
+class DBConnection {
+
+    public static Connection getConnection() {
+
+        try {
+
+            String url =
+                    "jdbc:mysql://localhost:3306/hospital_management";
+
+            String username = "root";
+
+            String password = "Tiger";
+
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
+            return DriverManager.getConnection(
+                    url,
+                    username,
+                    password
+            );
+        }
+
+        catch (Exception e) {
+
+            JOptionPane.showMessageDialog(
+                    null,
+                    "Database Connection Failed\n"
+                            + e.getMessage()
+            );
+
+            return null;
+        }
+    }
+}
+
+// ---------------- PATIENT CLASS ----------------
+
+class Patient {
+
+    int id;
+    String name;
+    int age;
+    String gender;
+    String disease;
+
+    Patient(int id,
+            String name,
+            int age,
+            String gender,
+            String disease) {
+
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.gender = gender;
+        this.disease = disease;
+    }
+}
+
+// ---------------- MAIN CLASS ----------------
+
+public class HospitalManagementGUI extends JFrame {
+
+    // ---------------- DATA STRUCTURES ----------------
+
+    ArrayList<Patient> patientList =
+            new ArrayList<>();
+
+    HashMap<Integer, Patient> patientMap =
+            new HashMap<>();
+
+    // ---------------- COMPONENTS ----------------
+
+    JTextField tfId;
+    JTextField tfName;
+    JTextField tfAge;
+    JTextField tfDisease;
+
+    JComboBox<String> genderBox;
+
+    DefaultTableModel model;
+
+    JLabel totalPatientsValue;
+
+    // ---------------- CONSTRUCTOR ----------------
+
+    HospitalManagementGUI() {
+
+        setTitle("Hospital Management System");
+
+        setSize(1400, 850);
+
+        setLocationRelativeTo(null);
+
+        setDefaultCloseOperation(
+                JFrame.EXIT_ON_CLOSE
+        );
+
+        setLayout(null);
+
+        // ---------------- MAIN PANEL ----------------
+
+        JPanel mainPanel = new JPanel();
+
+        mainPanel.setLayout(null);
+
+        mainPanel.setBackground(
+                new Color(236, 242, 238)
+        );
+
+        setContentPane(mainPanel);
+
+        // ---------------- SIDEBAR ----------------
+
+        JPanel sideBar = new JPanel();
+
+        sideBar.setBounds(0, 0, 250, 850);
+
+        sideBar.setBackground(
+                new Color(28, 94, 44)
+        );
+
+        sideBar.setLayout(null);
+
+        mainPanel.add(sideBar);
+
+        // ---------------- LOGO ----------------
+
+        JLabel logo =
+                new JLabel("HOSPITAL");
+
+        logo.setBounds(40, 40, 220, 50);
+
+        logo.setForeground(Color.WHITE);
+
+        logo.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.BOLD,
+                        24
+                )
+        );
+
+        sideBar.add(logo);
+
+        JLabel subLogo =
+                new JLabel("Management System");
+
+        subLogo.setBounds(42, 75, 200, 30);
+
+        subLogo.setForeground(Color.WHITE);
+
+        subLogo.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.PLAIN,
+                        14
+                )
+        );
+
+        sideBar.add(subLogo);
+
+        // ---------------- MENU ----------------
+
+        String menu[] = {
+
+                "Dashboard",
+                "Patients",
+                "Doctors",
+                "Appointments",
+                "Billing",
+                "Reports",
+                "Settings"
+        };
+
+        int y = 180;
+
+        for (String item : menu) {
+
+            JButton btn =
+                    new JButton(item);
+
+            btn.setBounds(18, y, 200, 45);
+
+            btn.setBackground(
+                    new Color(49, 135, 68)
+            );
+
+            btn.setForeground(Color.WHITE);
+
+            btn.setFocusPainted(false);
+
+            btn.setBorder(null);
+
+            btn.setFont(
+                    new Font(
+                            "Segoe UI",
+                            Font.BOLD,
+                            14
+                    )
+            );
+
+            sideBar.add(btn);
+
+            y += 60;
+        }
+
+        // ---------------- TOP PANEL ----------------
+
+        JPanel topPanel = new JPanel();
+
+        topPanel.setBounds(250, 0, 1150, 120);
+
+        topPanel.setBackground(
+                new Color(40, 130, 55)
+        );
+
+        topPanel.setLayout(null);
+
+        mainPanel.add(topPanel);
+
+        JLabel title =
+                new JLabel("Hospital Dashboard");
+
+        title.setBounds(40, 30, 500, 50);
+
+        title.setForeground(Color.WHITE);
+
+        title.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.BOLD,
+                        32
+                )
+        );
+
+        topPanel.add(title);
+
+        // ---------------- CARDS ----------------
+
+        JPanel card1 =
+                createCard(
+                        "Total Patients",
+                        "0",
+                        300
+                );
+
+        JPanel card2 =
+                createCard(
+                        "Appointments Today",
+                        "12",
+                        580
+                );
+
+        JPanel card3 =
+                createCard(
+                        "Revenue",
+                        "₹ 25K",
+                        860
+                );
+
+        mainPanel.add(card1);
+
+        mainPanel.add(card2);
+
+        mainPanel.add(card3);
+
+        // ---------------- FORM PANEL ----------------
+
+        JPanel formPanel = new JPanel();
+
+        formPanel.setBounds(
+                300,
+                330,
+                420,
+                380
+        );
+
+        formPanel.setLayout(null);
+
+        formPanel.setBackground(Color.WHITE);
+
+        formPanel.setBorder(
+                BorderFactory.createLineBorder(
+                        new Color(200, 200, 200)
+                )
+        );
+
+        mainPanel.add(formPanel);
+
+        JLabel formTitle =
+                new JLabel("Patient Registration");
+
+        formTitle.setBounds(
+                80,
+                25,
+                300,
+                40
+        );
+
+        formTitle.setForeground(
+                new Color(28, 130, 50)
+        );
+
+        formTitle.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.BOLD,
+                        22
+                )
+        );
+
+        formPanel.add(formTitle);
+
+        // ---------------- LABELS ----------------
+
+        formPanel.add(
+                createLabel(
+                        "Patient ID",
+                        40,
+                        100
+                )
+        );
+
+        formPanel.add(
+                createLabel(
+                        "Patient Name",
+                        40,
+                        150
+                )
+        );
+
+        formPanel.add(
+                createLabel(
+                        "Age",
+                        40,
+                        200
+                )
+        );
+
+        formPanel.add(
+                createLabel(
+                        "Gender",
+                        40,
+                        250
+                )
+        );
+
+        formPanel.add(
+                createLabel(
+                        "Disease",
+                        40,
+                        300
+                )
+        );
+
+        // ---------------- TEXTFIELDS ----------------
+
+        tfId =
+                createTextField(180, 100);
+
+        tfName =
+                createTextField(180, 150);
+
+        tfAge =
+                createTextField(180, 200);
+
+        tfDisease =
+                createTextField(180, 300);
+
+        formPanel.add(tfId);
+
+        formPanel.add(tfName);
+
+        formPanel.add(tfAge);
+
+        formPanel.add(tfDisease);
+
+        // ---------------- GENDER ----------------
+
+        String genders[] = {
+                "Male",
+                "Female"
+        };
+
+        genderBox =
+                new JComboBox<>(genders);
+
+        genderBox.setBounds(
+                180,
+                250,
+                180,
+                35
+        );
+
+        formPanel.add(genderBox);
+
+        // ---------------- BUTTONS ----------------
+
+        JButton btnAdd =
+                new JButton("Add Patient");
+
+        btnAdd.setBounds(
+                50,
+                350,
+                140,
+                40
+        );
+
+        btnAdd.setBackground(
+                new Color(34, 139, 34)
+        );
+
+        btnAdd.setForeground(Color.WHITE);
+
+        btnAdd.setFocusPainted(false);
+
+        formPanel.add(btnAdd);
+
+        JButton btnSearch =
+                new JButton("Search ID");
+
+        btnSearch.setBounds(
+                220,
+                350,
+                140,
+                40
+        );
+
+        btnSearch.setBackground(
+                new Color(34, 139, 34)
+        );
+
+        btnSearch.setForeground(Color.WHITE);
+
+        btnSearch.setFocusPainted(false);
+
+        formPanel.add(btnSearch);
+
+        // ---------------- TABLE PANEL ----------------
+
+        JPanel tablePanel = new JPanel();
+
+        tablePanel.setBounds(
+                760,
+                330,
+                590,
+                380
+        );
+
+        tablePanel.setLayout(null);
+
+        tablePanel.setBackground(Color.WHITE);
+
+        tablePanel.setBorder(
+                BorderFactory.createLineBorder(
+                        new Color(200, 200, 200)
+                )
+        );
+
+        mainPanel.add(tablePanel);
+
+        // ---------------- TABLE ----------------
+
+        model = new DefaultTableModel();
+
+        model.addColumn("ID");
+        model.addColumn("Name");
+        model.addColumn("Age");
+        model.addColumn("Gender");
+        model.addColumn("Disease");
+
+        JTable table =
+                new JTable(model);
+
+        table.setRowHeight(30);
+
+        table.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.PLAIN,
+                        13
+                )
+        );
+
+        JTableHeader header =
+                table.getTableHeader();
+
+        header.setBackground(
+                new Color(40, 130, 55)
+        );
+
+        header.setForeground(Color.WHITE);
+
+        header.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.BOLD,
+                        14
+                )
+        );
+
+        JScrollPane pane =
+                new JScrollPane(table);
+
+        pane.setBounds(
+                20,
+                20,
+                550,
+                330
+        );
+
+        tablePanel.add(pane);
+
+        // ---------------- ADD BUTTON ACTION ----------------
+
+        btnAdd.addActionListener(e -> {
+
+            try {
+
+                int id =
+                        Integer.parseInt(
+                                tfId.getText()
+                        );
+
+                String name =
+                        tfName.getText();
+
+                int age =
+                        Integer.parseInt(
+                                tfAge.getText()
+                        );
+
+                String gender =
+                        genderBox
+                                .getSelectedItem()
+                                .toString();
+
+                String disease =
+                        tfDisease.getText();
+
+                // ---------------- DATABASE INSERT ----------------
+
+                Connection con =
+                        DBConnection.getConnection();
+
+                String sql =
+                        "INSERT INTO patients " +
+                                "(patient_id, name, age, gender, disease) " +
+                                "VALUES (?, ?, ?, ?, ?)";
+
+                PreparedStatement pst =
+                        con.prepareStatement(sql);
+
+                pst.setInt(1, id);
+
+                pst.setString(2, name);
+
+                pst.setInt(3, age);
+
+                pst.setString(4, gender);
+
+                pst.setString(5, disease);
+
+                pst.executeUpdate();
+
+                pst.close();
+
+                con.close();
+
+                // ---------------- ARRAYLIST ----------------
+
+                Patient p =
+                        new Patient(
+                                id,
+                                name,
+                                age,
+                                gender,
+                                disease
+                        );
+
+                patientList.add(p);
+
+                patientMap.put(id, p);
+
+                // ---------------- TABLE UPDATE ----------------
+
+                model.addRow(
+                        new Object[] {
+                                id,
+                                name,
+                                age,
+                                gender,
+                                disease
+                        }
+                );
+
+                // ---------------- DASHBOARD UPDATE ----------------
+
+                totalPatientsValue.setText(
+                        String.valueOf(
+                                patientList.size()
+                        )
+                );
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Patient Added Successfully"
+                );
+
+                clearFields();
+            }
+
+            catch (Exception ex) {
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        ex.getMessage()
+                );
+            }
+        });
+
+        // ---------------- SEARCH BUTTON ----------------
+
+        btnSearch.addActionListener(e -> {
+
+            String input =
+                    JOptionPane.showInputDialog(
+                            "Enter Patient ID"
+                    );
+
+            try {
+
+                int id =
+                        Integer.parseInt(input);
+
+                if (patientMap.containsKey(id)) {
+
+                    Patient p =
+                            patientMap.get(id);
+
+                    JOptionPane.showMessageDialog(
+                            null,
+
+                            "Patient Found\n\n" +
+
+                                    "ID : " + p.id + "\n" +
+
+                                    "Name : " + p.name + "\n" +
+
+                                    "Age : " + p.age + "\n" +
+
+                                    "Gender : " + p.gender + "\n" +
+
+                                    "Disease : " + p.disease
+                    );
+                }
+
+                else {
+
+                    JOptionPane.showMessageDialog(
+                            null,
+                            "Patient Not Found"
+                    );
+                }
+            }
+
+            catch (Exception ex) {
+
+                JOptionPane.showMessageDialog(
+                        null,
+                        "Invalid ID"
+                );
+            }
+        });
+
+        setVisible(true);
+    }
+
+    // ---------------- CARD METHOD ----------------
+
+    JPanel createCard(
+            String title,
+            String value,
+            int x
+    ) {
+
+        JPanel card = new JPanel();
+
+        card.setBounds(x, 150, 240, 140);
+
+        card.setBackground(Color.WHITE);
+
+        card.setLayout(null);
+
+        card.setBorder(
+                BorderFactory.createLineBorder(
+                        new Color(200, 200, 200)
+                )
+        );
+
+        JLabel lblTitle =
+                new JLabel(title);
+
+        lblTitle.setBounds(
+                20,
+                20,
+                200,
+                30
+        );
+
+        lblTitle.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.BOLD,
+                        16
+                )
+        );
+
+        JLabel lblValue =
+                new JLabel(value);
+
+        lblValue.setBounds(
+                20,
+                60,
+                150,
+                40
+        );
+
+        lblValue.setForeground(
+                new Color(28, 130, 50)
+        );
+
+        lblValue.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.BOLD,
+                        28
+                )
+        );
+
+        if (title.equals("Total Patients")) {
+
+            totalPatientsValue =
+                    lblValue;
+        }
+
+        card.add(lblTitle);
+
+        card.add(lblValue);
+
+        return card;
+    }
+
+    // ---------------- LABEL METHOD ----------------
+
+    JLabel createLabel(
+            String text,
+            int x,
+            int y
+    ) {
+
+        JLabel lbl =
+                new JLabel(text);
+
+        lbl.setBounds(x, y, 120, 30);
+
+        lbl.setFont(
+                new Font(
+                        "Segoe UI",
+                        Font.PLAIN,
+                        14
+                )
+        );
+
+        return lbl;
+    }
+
+    // ---------------- TEXTFIELD METHOD ----------------
+
+    JTextField createTextField(
+            int x,
+            int y
+    ) {
+
+        JTextField tf =
+                new JTextField();
+
+        tf.setBounds(x, y, 180, 35);
+
+        return tf;
+    }
+
+    // ---------------- CLEAR METHOD ----------------
+
+    void clearFields() {
+
+        tfId.setText("");
+
+        tfName.setText("");
+
+        tfAge.setText("");
+
+        tfDisease.setText("");
+    }
+
+    // ---------------- MAIN METHOD ----------------
+
+    public static void main(String[] args) {
+
+        SwingUtilities.invokeLater(() -> {
+
+            new HospitalManagementGUI();
+        });
+    }
+}
